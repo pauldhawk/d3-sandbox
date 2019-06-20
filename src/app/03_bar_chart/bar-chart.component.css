@@ -1,0 +1,10 @@
+.bar {
+    fill: #56AADB;
+}
+
+
+.axis-title {
+    fill: none;
+    stroke: black;
+    stroke-width: 0.5px;
+}
