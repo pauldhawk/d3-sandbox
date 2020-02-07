@@ -15,8 +15,8 @@ export class DonutChartComponent implements OnInit {
 
     title = 'Donut Chart';
 
-    private width: number;
-    private height: number;
+    private width: number = 500;
+    private height: number = 250;
 
     private svg: any;     // TODO replace all `any` by the right type
 
@@ -67,9 +67,9 @@ export class DonutChartComponent implements OnInit {
     private initSvg() {
         this.svg = d3.select('svg');
 
-        this.width = +this.svg.attr('width');
-        this.height = +this.svg.attr('height');
-        this.radius = Math.min(this.width, this.height) / 2;
+        // this.width = +this.svg.attr('width');
+        // this.height = +this.svg.attr('height');
+        this.radius = this.height;
 
         const anglesRange = 0.5 * Math.PI;
         this.arc = d3Shape.arc()
@@ -92,7 +92,7 @@ export class DonutChartComponent implements OnInit {
 
         this.svg = d3.select('svg')
             .append('g')
-            .attr('transform', 'translate(' + this.width / 2 + ',' + this.height / 2 + ')');
+            .attr('transform', 'translate(' + this.width / 2 + ',' + this.height + ')');
     }
 
     private drawChart(data, colors, arc) {
