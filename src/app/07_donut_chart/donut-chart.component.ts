@@ -28,11 +28,40 @@ export class DonutChartComponent implements OnInit {
 
     private g: any;
 
+    pulse_score_list = {
+      0: '#D8F1FF',
+      1: '#A0DCFF',
+      2: '#40B4FF',
+      3: '#0074BF',
+      4: '#004A79',
+      5: '#273953',
+    }
+    pulse_benchmark_list = {
+      0: '#D4E5BE',
+      1: '#B7CD99',
+      2: '#A2C179',
+      3: '#83A753',
+      4: '#648B30',
+      5: '#426415',
+    };
+
+    benchmark_arc;
+    score_arc;
     constructor() {}
 
     ngOnInit() {
-        this.initSvg();
-        this.drawChart(POPULATION);
+      const score_color_array = Object.keys(this.pulse_score_list).map(x => this.pulse_score_list[x]);
+      const score_colors = d3Scale.scaleOrdinal()
+        .range(score_color_array);
+      const bench_color_array = Object.keys(this.pulse_benchmark_list).map(x => this.pulse_benchmark_list[x]);
+
+      const benchmark_colors = d3Scale.scaleOrdinal()
+      .range(bench_color_array);
+
+      this.initSvg();
+
+      this.drawChart(bench_color_array, benchmark_colors, this.benchmark_arc);
+      this.drawChart(score_color_array, score_colors, this.score_arc);
     }
 
     private initSvg() {
@@ -42,36 +71,39 @@ export class DonutChartComponent implements OnInit {
         this.height = +this.svg.attr('height');
         this.radius = Math.min(this.width, this.height) / 2;
 
-        this.color = d3Scale.scaleOrdinal()
-            .range(['#98abc5', '#8a89a6', '#7b6888', '#6b486b', '#a05d56', '#d0743c', '#ff8c00']);
-
+        const anglesRange = 0.5 * Math.PI;
         this.arc = d3Shape.arc()
-            .outerRadius(this.radius - 10)
-            .innerRadius(this.radius - 70);
+          .outerRadius(this.radius - 10)
+          .innerRadius(this.radius - 70)
+        this.benchmark_arc = d3Shape.arc()
+          .outerRadius(this.radius - 80)
+          .innerRadius(this.radius - 100)
+
+        this.score_arc = d3Shape.arc()
+          .outerRadius(this.radius - 10)
+          .innerRadius(this.radius - 70)
 
         this.pie = d3Shape.pie()
             .sort(null)
-            .value((d: any) => d.population);
+            .value((d: any) => 1)
+            .startAngle( anglesRange * -1)
+            .endAngle( anglesRange)
+            .padAngle(.02)
 
         this.svg = d3.select('svg')
             .append('g')
             .attr('transform', 'translate(' + this.width / 2 + ',' + this.height / 2 + ')');
     }
 
-    private drawChart(data: any[]) {
-        let g = this.svg.selectAll('.arc')
+    private drawChart(data, colors, arc) {
+        let g = this.svg.selectAll('.benchmark')
             .data(this.pie(data))
             .enter().append('g')
-            .attr('class', 'arc');
+            // .attr('class', 'arc');
 
         g.append('path')
-            .attr('d', this.arc)
-            .style('fill', d => this.color(d.data.age));
-
-        g.append('text')
-            .attr('transform', d => 'translate(' + this.arc.centroid(d) + ')')
-            .attr('dy', '.35em')
-            .text(d => d.data.age);
+            .attr('d', arc)
+            .style('fill', (d, i) => colors(i) );
     }
 
 }
