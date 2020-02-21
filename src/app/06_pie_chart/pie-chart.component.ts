@@ -1,11 +1,13 @@
-import { Component, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, Input } from '@angular/core';
 
 import * as d3 from 'd3-selection';
 import * as d3Scale from 'd3-scale';
 import * as d3Shape from 'd3-shape';
-
+import * as d3Array from 'd3-array';
+import * as d3Cols from 'd3-collection';
+import * as d3Axis from 'd3-axis';
 import { POPULATION } from '../shared';
-
+import mocks from '../shared/heat_mocks';
 @Component({
     selector: 'app-pie-chart',
     encapsulation: ViewEncapsulation.None,
@@ -14,57 +16,84 @@ import { POPULATION } from '../shared';
 })
 export class PieChartComponent implements OnInit {
 
-    title = 'Pie Chart';
-
+    // sizing
     private margin = {top: 20, right: 20, bottom: 30, left: 50};
-    private width: number;
-    private height: number;
+    @Input('width') total_width = 400;
+    @Input('height') total_height = 400;
+    height;
+    width;
+    private padding = 0.05;
+
+    // colors and scales
+    private color_array = [ '#D8F1FF', '#A0DCFF', '#40B4FF', '#0074BF', '#004A79', '#273953', ];
+    private color: any; // the color scale
+
+    private x;
+    private y;
+
+    // raw data
+    @Input() data = mocks.data;
+    @Input() xData = mocks.scores;
+    @Input() yData = mocks.topics;
+
+    title = 'Pie Chart';
     private radius: number;
 
     private arc: any;
     private labelArc: any;
     private pie: any;
-    private color: any;
+
+
+    private color_range: any;
     private svg: any;
 
     constructor() {
-        this.width = 900 - this.margin.left - this.margin.right;
-        this.height = 500 - this.margin.top - this.margin.bottom;
-        this.radius = Math.min(this.width, this.height) / 2;
+
     }
 
     ngOnInit() {
-        this.initSvg();
-        this.drawPie();
+      this.width = this.total_width - this.margin.left - this.margin.right;
+      this.height = this.total_height - this.margin.top - this.margin.bottom;
+      this.initSvg();
+      this.drawPie();
     }
 
     private initSvg() {
-        this.color = d3Scale.scaleOrdinal()
-            .range(['#98abc5', '#8a89a6', '#7b6888', '#6b486b', '#a05d56', '#d0743c', '#ff8c00']);
-        this.arc = d3Shape.arc()
-            .outerRadius(this.radius - 10)
-            .innerRadius(0);
-        this.labelArc = d3Shape.arc()
-            .outerRadius(this.radius - 40)
-            .innerRadius(this.radius - 40);
-        this.pie = d3Shape.pie()
-            .sort(null)
-            .value((d: any) => d.population);
-        this.svg = d3.select('svg')
-            .append('g')
-            .attr('transform', 'translate(' + this.width / 2 + ',' + this.height / 2 + ')');
+      this.color = d3Scale.scaleLinear<string>()
+        .range(this.color_array)
+        .domain([0,d3Array.max(this.data, (x) => x.count)])
+
+      this.y = d3Scale.scaleBand()
+        .range([0, this.height])
+        .domain(this.yData.map(y => `id-${y.topic_id}`))
+        .padding(this.padding);
+
+      this.x = d3Scale.scaleBand()
+        .range([0, this.width])
+        .domain(this.xData.map(x => `id-${x.score}`))
+        .padding(this.padding);
+
+
+      this.svg = d3.select('svg')
+        .append('g')
+        .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
     }
 
     private drawPie() {
-        let g = this.svg.selectAll('.arc')
-            .data(this.pie(POPULATION))
-            .enter().append('g')
-            .attr('class', 'arc');
-        g.append('path').attr('d', this.arc)
-            .style('fill', (d: any) => this.color(d.data.age) );
-        g.append('text').attr('transform', (d: any) => 'translate(' + this.labelArc.centroid(d) + ')')
-            .attr('dy', '.35em')
-            .text((d: any) => d.data.age);
+      let g = this.svg.selectAll('.heat')
+        .data(this.data, (d) =>  `${d.topic_id}:${d.score_id}`)
+        .enter()
+        .append("rect")
+        .attr("y", (d) =>  this.y(`id-${d.topic_id}`) )
+        .attr("x", (d) => this.x(`id-${d.score_id}`)  )
+        .attr("rx", 4)
+        .attr("ry", 4)
+        .attr("width", this.x.bandwidth() )
+        .attr("height", this.y.bandwidth() )
+        .style("fill", (d) => this.color(d.count) )
+        .style("stroke-width", 4)
+        .style("stroke", "none")
+        .style("opacity", 0.8)
     }
 
 }
