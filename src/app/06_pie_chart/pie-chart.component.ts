@@ -17,15 +17,15 @@ import mocks from '../shared/heat_mocks';
 export class PieChartComponent implements OnInit {
 
     // sizing
-    private margin = {top: 20, right: 20, bottom: 30, left: 50};
-    @Input('width') total_width = 400;
+    private margin = {top: 0, right: 0, bottom: 30, left: 200};
+    @Input('width') total_width = 800;
     @Input('height') total_height = 400;
     height;
     width;
     private padding = 0.05;
 
     // colors and scales
-    private color_array = [ '#D8F1FF', '#A0DCFF', '#40B4FF', '#0074BF', '#004A79', '#273953', ];
+    private color_range = [ '#D8F1FF', '#A0DCFF', '#40B4FF', '#0074BF', '#004A79', '#273953', ];
     private color: any; // the color scale
 
     private x;
@@ -36,15 +36,6 @@ export class PieChartComponent implements OnInit {
     @Input() xData = mocks.scores;
     @Input() yData = mocks.topics;
 
-    title = 'Pie Chart';
-    private radius: number;
-
-    private arc: any;
-    private labelArc: any;
-    private pie: any;
-
-
-    private color_range: any;
     private svg: any;
 
     constructor() {
@@ -60,7 +51,7 @@ export class PieChartComponent implements OnInit {
 
     private initSvg() {
       this.color = d3Scale.scaleLinear<string>()
-        .range(this.color_array)
+        .range(this.color_range)
         .domain([0,d3Array.max(this.data, (x) => x.count)])
 
       this.y = d3Scale.scaleBand()
@@ -73,10 +64,32 @@ export class PieChartComponent implements OnInit {
         .domain(this.xData.map(x => `id-${x.score}`))
         .padding(this.padding);
 
+      const y_lables = d3Scale.scaleBand()
+        .range([0, this.height])
+        .domain(this.yData.map(y => y.name))
+        .padding(this.padding);
+
+      const x_lables = d3Scale.scaleBand()
+        .range([0, this.width])
+        .domain(this.xData.map(x => x.name))
+        .padding(this.padding);
+
+
 
       this.svg = d3.select('svg')
         .append('g')
         .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+
+      this.svg.append("g")
+        .style("font-size", 15)
+        .attr("transform", "translate(0," + this.height + ")")
+        .call(d3Axis.axisBottom(x_lables).tickSize(0))
+        .select(".domain").remove()
+
+      this.svg.append("g")
+        .style("font-size", 15)
+        .call(d3Axis.axisLeft(y_lables).tickSize(0))
+        .select(".domain").remove()
     }
 
     private drawPie() {
